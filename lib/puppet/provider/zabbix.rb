@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # zabbix provider type for puppet
 class Puppet::Provider::Zabbix < Puppet::Provider
   # This method is vendored from the AWS SDK, rather than including an
@@ -46,14 +48,14 @@ class Puppet::Provider::Zabbix < Puppet::Provider
   # Create the api connection
   def self.create_connection
     protocol = api_config['default']['apache_use_ssl'] == 'true' ? 'https' : 'http'
-    zbx = ZabbixApi.connect(
+    ZabbixApi.connect(
       url: "#{protocol}://#{api_config['default']['zabbix_url']}/api_jsonrpc.php",
       user: api_config['default']['zabbix_user'],
       password: api_config['default']['zabbix_pass'],
       http_user: api_config['default']['zabbix_user'],
-      http_password: api_config['default']['zabbix_pass']
+      http_password: api_config['default']['zabbix_pass'],
+      ignore_version: true
     )
-    zbx
   end
 
   def create_connection
@@ -79,6 +81,7 @@ class Puppet::Provider::Zabbix < Puppet::Provider
   # Get the template id from the name.
   def get_template_id(zbx, template)
     return template if a_number?(template)
+
     zbx.templates.get_id(host: template)
   end
 
@@ -94,7 +97,7 @@ class Puppet::Provider::Zabbix < Puppet::Provider
   end
 
   # Is it a number?
-  def a_number?(s)
-    s.to_s.match(%r{\A[+-]?\d+?(\.\d+)?\Z}).nil? ? false : true
+  def a_number?(value)
+    !value.to_s.match(%r{\A[+-]?\d+?(\.\d+)?\Z}).nil?
   end
 end

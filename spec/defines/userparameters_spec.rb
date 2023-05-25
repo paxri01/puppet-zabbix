@@ -1,18 +1,13 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe 'zabbix::userparameters', type: :define do
-  on_supported_os.each do |os, facts|
+  on_supported_os(baseline_os_hash).each do |os, facts|
     next if facts[:os]['name'] == 'windows'
-    context "on #{os} " do
-      let :facts do
-        systemd_fact = case facts[:os]['family']
-                       when 'Archlinux', 'Fedora', 'Gentoo'
-                         { systemd: true }
-                       else
-                         { systemd: false }
-                       end
-        facts.merge(systemd_fact)
-      end
+
+    context "on #{os}" do
+      let(:facts) { facts }
       let(:title) { 'mysqld' }
       let(:pre_condition) { 'class { "zabbix::agent": include_dir => "/etc/zabbix/zabbix_agentd.d" }' }
 

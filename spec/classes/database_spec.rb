@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe 'zabbix::database' do
@@ -5,9 +7,10 @@ describe 'zabbix::database' do
     'rspec.puppet.com'
   end
 
-  on_supported_os.each do |os, facts|
+  on_supported_os(baseline_os_hash).each do |os, facts|
     next if facts[:os]['name'] == 'windows'
-    context "on #{os} " do
+
+    context "on #{os}" do
       let :facts do
         facts
       end

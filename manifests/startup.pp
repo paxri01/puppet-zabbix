@@ -1,15 +1,21 @@
-# == Define: zabbix::startup
+# @summary This manage the zabbix related service startup script.
+# @param pidfile Location of the PID file
+# @param agent_configfile_path Location of Zabbix's agent configuration file
+# @param server_configfile_path Location of Zabbix's server configuration file
+# @param database_type
+#   Type of database. Can use the following 2 databases:
+#   - postgresql
+#   - mysql
+# @param zabbix_user User the zabbix service will run as
+# @param additional_service_params Additional parameters to pass to the service
+# @param service_type Systemd service type
+# @param manage_database When true, it will configure the database and execute the sql scripts.
+# @param service_name Name of the service. Defaults to the resource name
+# @example
+#   zabbix::startup { 'agent': }
 #
-#  This manage the zabbix related service startup script.
-#
-# === Requirements
-#
-# === Parameters
-#
-# === Example
-#
-#  zabbix::startup { 'agent':
-#  }
+# @example
+#   zabbix::startup { 'server': }
 #
 define zabbix::startup (
   Optional[Stdlib::Absolutepath] $pidfile                = undef,
@@ -17,12 +23,12 @@ define zabbix::startup (
   Optional[Stdlib::Absolutepath] $server_configfile_path = undef,
   Optional[Zabbix::Databases] $database_type             = undef,
   Optional[String] $zabbix_user                          = undef,
-  String $additional_service_params                      = '',
+  Optional[String[1]] $additional_service_params         = undef,
   String $service_type                                   = 'simple',
   Optional[Boolean] $manage_database                     = undef,
   Optional[String] $service_name                         = $name,
 ) {
-  case $title {
+  case $title.downcase {
     /agent/: {
       assert_type(Stdlib::Absolutepath, $agent_configfile_path)
     }
@@ -38,12 +44,9 @@ define zabbix::startup (
   # provided by camp2camp/systemd
   if $facts['systemd'] {
     contain systemd
-    file { "/etc/systemd/system/${name}.service":
-      ensure  => file,
-      mode    => '0664',
+    systemd::unit_file { "${name}.service":
       content => template("zabbix/${service_name}-systemd.init.erb"),
     }
-    ~> Exec['systemctl-daemon-reload']
     file { "/etc/init.d/${name}":
       ensure  => absent,
     }

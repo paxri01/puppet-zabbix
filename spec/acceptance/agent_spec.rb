@@ -1,13 +1,12 @@
+# frozen_string_literal: true
+
 require 'spec_helper_acceptance'
 
-def agent_supported(version)
-  return version != '2.4' if default[:platform] =~ %r{(ubuntu-16.04|debian-9)-amd64}
-  return version >= '4.0' if default[:platform] =~ %r{debian-10-amd64}
-  true
-end
+supported_versions.each do |version|
+  # No Zabbix 5.2 packages on Debian 11
+  next if version == '5.2' && default[:platform] == 'debian-11-amd64'
 
-['2.4', '3.2', '3.4', '4.0', '4.2', '4.4'].each do |version|
-  describe "zabbix::agent class with zabbix_version #{version}", if: agent_supported(version) do
+  describe "zabbix::agent class with zabbix_version #{version}" do
     it 'works idempotently with no errors' do
       pp = <<-EOS
       class { 'zabbix::agent':
@@ -47,14 +46,16 @@ end
             listenip             => '127.0.0.1',
             zabbix_version       => '#{version}',
           }
-          EOS
+        EOS
         apply_manifest(pp, catch_failures: true)
         apply_manifest(pp, catch_changes: true)
       end
+
       describe file('/etc/zabbix/zabbix_agentd.conf') do
         its(:content) { is_expected.to match %r{ListenIP=127.0.0.1} }
       end
     end
+
     context 'With ListenIP set to lo' do
       it 'works idempotently with no errors' do
         pp = <<-EOS
@@ -64,10 +65,11 @@ end
             listenip             => 'lo',
             zabbix_version       => '#{version}',
           }
-          EOS
+        EOS
         apply_manifest(pp, catch_failures: true)
         apply_manifest(pp, catch_changes: true)
       end
+
       context 'With ListenIP set to an IP-Address' do
         it 'works idempotently with no errors' do
           pp = <<-EOS
@@ -77,10 +79,11 @@ end
               listenip             => '127.0.0.1',
               zabbix_version       => '#{version}',
             }
-            EOS
+          EOS
           apply_manifest(pp, catch_failures: true)
           apply_manifest(pp, catch_changes: true)
         end
+
         describe file('/etc/zabbix/zabbix_agentd.conf') do
           its(:content) { is_expected.to match %r{ListenIP=127.0.0.1} }
         end
